@@ -70,10 +70,11 @@
 <div id="vue-login" class="login hidden">
   <div class="card">
     <div class="titre center">🎬 Mon Ciné</div>
-    <p class="muted center">Entre ton adresse email : tu recevras un lien de connexion.</p>
+    <p class="muted center">Avec ton mot de passe, ou sans : tu recevras alors un lien de connexion par email.</p>
     <form id="form-login">
       <input id="login-email" type="email" required placeholder="ton.email@gmail.com" autocomplete="email">
-      <div style="margin-top:10px"><button class="primary" style="width:100%">Recevoir le lien</button></div>
+      <input id="login-mdp" type="password" placeholder="Mot de passe (si tu en as défini un)" autocomplete="current-password" style="margin-top:8px">
+      <div style="margin-top:10px"><button class="primary" style="width:100%" id="btn-login">Recevoir le lien</button></div>
     </form>
     <p id="login-msg" class="muted center"></p>
   </div>
@@ -83,7 +84,14 @@
   <header>
     <div class="bar">
       <h1>🎬 Mon Ciné</h1>
+      <button class="link" id="btn-mdp">Mot de passe</button>
       <button class="link" id="btn-logout">Déconnexion</button>
+    </div>
+    <div class="bar hidden" id="panneau-mdp">
+      <form id="form-mdp" class="row" style="width:100%">
+        <input id="nouveau-mdp" type="password" minlength="8" required placeholder="Nouveau mot de passe (8 caractères min.)" autocomplete="new-password">
+        <button class="primary" style="flex:0 0 auto">Enregistrer</button>
+      </form>
     </div>
     <nav>
       <button data-onglet="semaine" class="on">Cette semaine</button>
@@ -171,9 +179,29 @@ function afficher(session) {
   if (session && !dejaCharge) { dejaCharge = true; chargerSemaines(); }
   if (!session) dejaCharge = false;
 }
+$("#login-mdp").addEventListener("input", () => {
+  $("#btn-login").textContent = $("#login-mdp").value ? "Se connecter" : "Recevoir le lien";
+});
+$("#btn-mdp").addEventListener("click", () => $("#panneau-mdp").classList.toggle("hidden"));
+$("#form-mdp").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const { error } = await sb.auth.updateUser({ password: $("#nouveau-mdp").value });
+  if (error) return toast("Erreur : " + error.message, true);
+  e.target.reset(); $("#panneau-mdp").classList.add("hidden");
+  toast("Mot de passe enregistré 🔐");
+});
 $("#form-login").addEventListener("submit", async (e) => {
   e.preventDefault();
   const email = $("#login-email").value.trim();
+  const mdp = $("#login-mdp").value;
+  if (mdp) {
+    $("#login-msg").textContent = "Connexion…";
+    const { error } = await sb.auth.signInWithPassword({ email, password: mdp });
+    $("#login-msg").textContent = error
+      ? "Email ou mot de passe incorrect. Sans mot de passe défini, laisse le champ vide pour recevoir un lien."
+      : "";
+    return;
+  }
   $("#login-msg").textContent = "Envoi…";
   const { error } = await sb.auth.signInWithOtp({
     email, options: { emailRedirectTo: location.origin + location.pathname }
