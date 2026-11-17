@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Mon Ciné</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+<style>
+  :root {
+    --bg: #14121a; --card: #1f1c28; --card2: #2a2636; --txt: #f1eef7; --muted: #a59fb5;
+    --accent: #f5b642; --ok: #4cc38a; --ko: #e5675e; --line: #39344a; --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--txt);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { position: sticky; top: 0; z-index: 5; background: rgba(20,18,26,.95);
+    backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+  .bar { max-width: 760px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+  .bar h1 { font-size: 18px; margin: 0; flex: 1; }
+  nav { max-width: 760px; margin: 0 auto; padding: 0 16px 10px; display: flex; gap: 6px; }
+  nav button { flex: 1; }
+  main { max-width: 760px; margin: 0 auto; padding: 16px; }
+  button, select, input, textarea { font: inherit; color: inherit; }
+  button { background: var(--card2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 12px; cursor: pointer; }
+  button:hover { border-color: var(--muted); }
+  button.on { background: var(--accent); color: #1a1500; border-color: var(--accent); font-weight: 600; }
+  button.primary { background: var(--accent); color: #1a1500; border: 0; font-weight: 600; }
+  button.link { background: none; border: 0; color: var(--muted); padding: 4px; text-decoration: underline; }
+  input, select, textarea { width: 100%; background: var(--card2); border: 1px solid var(--line);
+    border-radius: 10px; padding: 9px 11px; }
+  textarea { min-height: 70px; resize: vertical; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px; margin-bottom: 12px; }
+  .card.reco { border-color: var(--accent); }
+  .num { color: var(--accent); font-weight: 700; margin-right: 6px; }
+  .titre { font-size: 17px; font-weight: 700; }
+  .orig { color: var(--muted); font-weight: 400; font-size: 14px; }
+  .meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .syn { margin: 8px 0; }
+  .notes { font-size: 13px; }
+  .badge { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px;
+    background: var(--card2); border: 1px solid var(--line); margin: 2px 4px 2px 0; }
+  .badge.reco { background: var(--accent); color: #1a1500; border-color: var(--accent); font-weight: 600; }
+  .pourquoi-reco { font-size: 13px; color: var(--accent); margin-top: 4px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .actions button { flex: 1 1 auto; }
+  .etat { font-size: 13px; margin-top: 8px; color: var(--ok); }
+  .vuform { margin-top: 10px; padding-top: 6px; border-top: 1px dashed var(--line); }
+  .stars { display: flex; gap: 4px; }
+  .stars button { font-size: 22px; padding: 2px 8px; background: none; border: 0; color: var(--line); }
+  .stars button.lit { color: var(--accent); }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row > * { flex: 1; }
+  .muted { color: var(--muted); }
+  .center { text-align: center; }
+  .login { max-width: 380px; margin: 12vh auto; }
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ok);
+    color: #04210f; padding: 10px 16px; border-radius: 10px; font-weight: 600; display: none; z-index: 10; }
+  .toast.err { background: var(--ko); color: #fff; }
+  .hist .titre { font-size: 15px; }
+  h2 { font-size: 15px; color: var(--muted); font-weight: 600; margin: 18px 0 10px; text-transform: uppercase; letter-spacing: .04em; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="vue-login" class="login hidden">
+  <div class="card">
+    <div class="titre center">🎬 Mon Ciné</div>
+    <p class="muted center">Entre ton adresse email : tu recevras un lien de connexion.</p>
+    <form id="form-login">
+      <input id="login-email" type="email" required placeholder="ton.email@gmail.com" autocomplete="email">
+      <div style="margin-top:10px"><button class="primary" style="width:100%">Recevoir le lien</button></div>
+    </form>
+    <p id="login-msg" class="muted center"></p>
+  </div>
+</div>
+
+<div id="vue-app" class="hidden">
+  <header>
+    <div class="bar">
+      <h1>🎬 Mon Ciné</h1>
+      <button class="link" id="btn-logout">Déconnexion</button>
+    </div>
+    <nav>
+      <button data-onglet="semaine" class="on">Cette semaine</button>
+      <button data-onglet="ajouter">+ Ajouter</button>
+      <button data-onglet="historique">Historique</button>
+    </nav>
+  </header>
+  <main>
+    <section id="onglet-semaine">
+      <div class="row" style="margin-bottom:12px">
+        <select id="choix-semaine"></select>
+      </div>
+      <div id="liste-films"></div>
+    </section>
+
+    <section id="onglet-ajouter" class="hidden">
+      <div class="card">
+        <div class="titre">Un film ou une série hors newsletter</div>
+        <form id="form-ajout">
+          <label>Titre *</label>
+          <input id="aj-titre" required placeholder="The Big Lebowski">
+          <div class="row">
+            <div><label>Année</label><input id="aj-annee" type="number" min="1890" max="2100" placeholder="1998"></div>
+            <div><label>Type</label>
+              <select id="aj-type"><option value="film">Film</option><option value="serie">Série</option></select></div>
+          </div>
+          <label>Ton retour</label>
+          <select id="aj-statut">
+            <option value="vu">Je l'ai vu</option>
+            <option value="interesse">Ça m'intéresse (pas encore vu)</option>
+            <option value="pas_interesse">Ça ne m'intéresse pas</option>
+          </select>
+          <div id="aj-bloc-vu">
+            <label>Note</label>
+            <div class="stars" id="aj-stars"></div>
+            <label>Où / comment</label>
+            <input id="aj-ou" placeholder="Canal+ à la maison, UGC Lille en VO…">
+          </div>
+          <label>Pourquoi ?</label>
+          <textarea id="aj-pourquoi" placeholder="Ce qui t'a plu ou déplu…"></textarea>
+          <div style="margin-top:12px"><button class="primary" style="width:100%">Enregistrer</button></div>
+        </form>
+      </div>
+    </section>
+
+    <section id="onglet-historique" class="hidden">
+      <div id="liste-historique"></div>
+    </section>
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+// Clé publique (prévue pour être visible) : les données sont protégées par les règles de la base.
+const SUPABASE_URL = "https://zmyrttxucwthjsdtkfol.supabase.co";
+const SUPABASE_KEY = "sb_publishable_UkNHti-ud4L7A8AU3UrRjA_9PaafSE5";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = (s) => document.querySelector(s);
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const etoiles = (n) => n ? "★".repeat(n) + "☆".repeat(5 - n) : "";
+const duree = (m) => m ? `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}` : "";
+const dateFr = (d) => d ? new Date(d + (d.length === 10 ? "T12:00:00" : "")).toLocaleDateString("fr-FR",
+  { day: "numeric", month: "long", year: "numeric" }) : "";
+
+function toast(msg, err = false) {
+  const t = $("#toast");
+  t.textContent = msg; t.className = "toast" + (err ? " err" : ""); t.style.display = "block";
+  clearTimeout(toast._t); toast._t = setTimeout(() => (t.style.display = "none"), 2500);
+}
+
+// ---------- Connexion ----------
+async function demarrer() {
+  const { data: { session } } = await sb.auth.getSession();
+  afficher(session);
+  sb.auth.onAuthStateChange((_e, s) => afficher(s));
+}
+let dejaCharge = false;
+function afficher(session) {
+  $("#vue-login").classList.toggle("hidden", !!session);
+  $("#vue-app").classList.toggle("hidden", !session);
+  if (session && !dejaCharge) { dejaCharge = true; chargerSemaines(); }
+  if (!session) dejaCharge = false;
+}
+$("#form-login").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = $("#login-email").value.trim();
+  $("#login-msg").textContent = "Envoi…";
+  const { error } = await sb.auth.signInWithOtp({
+    email, options: { emailRedirectTo: location.origin + location.pathname }
+  });
+  $("#login-msg").textContent = error ? "Erreur : " + error.message
+    : "C'est envoyé ! Ouvre le lien reçu par email, sur cet appareil.";
+});
+$("#btn-logout").addEventListener("click", () => sb.auth.signOut());
+
+// ---------- Onglets ----------
+document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("nav button").forEach((x) => x.classList.toggle("on", x === b));
+  ["semaine", "ajouter", "historique"].forEach((o) =>
+    $("#onglet-" + o).classList.toggle("hidden", o !== b.dataset.onglet));
+  if (b.dataset.onglet === "historique") chargerHistorique();
+  if (b.dataset.onglet === "semaine") chargerFilms();
+}));
+
+// ---------- Cette semaine ----------
+async function chargerSemaines() {
+  const { data, error } = await sb.from("films").select("newsletter_du")
+    .not("newsletter_du", "is", null).order("newsletter_du", { ascending: false });
+  if (error) return erreurAcces(error);
+  const dates = [...new Set(data.map((r) => r.newsletter_du))];
+  const sel = $("#choix-semaine");
+  sel.innerHTML = dates.length
+    ? dates.map((d) => `<option value="${d}">Newsletter du ${dateFr(d)}</option>`).join("")
+    : `<option value="">Aucune newsletter pour l'instant</option>`;
+  chargerFilms();
+}
+$("#choix-semaine").addEventListener("change", chargerFilms);
+
+function erreurAcces(error) {
+  $("#liste-films").innerHTML = `<div class="card">Accès refusé ou erreur : ${esc(error.message)}.
+    <br><span class="muted">Vérifie que tu es connecté avec la bonne adresse.</span></div>`;
+}
+
+function ordreNumero(a, b) {
+  const k = (n) => { n = n || ""; const s = n.startsWith("N") ? 1000 : 0; return s + (parseInt(n.replace(/\D/g, "")) || 999); };
+  return k(a.numero) - k(b.numero);
+}
+
+async function chargerFilms() {
+  const semaine = $("#choix-semaine").value;
+  const liste = $("#liste-films");
+  if (!semaine) { liste.innerHTML = `<p class="muted center">Les films arriveront avec la prochaine newsletter du jeudi.</p>`; return; }
+  liste.innerHTML = `<p class="muted center">Chargement…</p>`;
+  const { data: films, error } = await sb.from("films").select("*").eq("newsletter_du", semaine);
+  if (error) return erreurAcces(error);
+  const ids = films.map((f) => f.id);
+  const { data: avis } = ids.length
+    ? await sb.from("dernier_avis").select("*").in("film_id", ids) : { data: [] };
+  const parFilm = Object.fromEntries((avis || []).map((a) => [a.film_id, a]));
+  films.sort(ordreNumero);
+  const salles = films.filter((f) => f.source !== "streaming");
+  const maison = films.filter((f) => f.source === "streaming");
+  liste.innerHTML = "";
+  if (salles.length) { liste.insertAdjacentHTML("beforeend", `<h2>🎞️ Au cinéma (${salles.length})</h2>`); salles.forEach((f) => liste.appendChild(carte(f, parFilm[f.id]))); }
+  if (maison.length) { liste.insertAdjacentHTML("beforeend", `<h2>📺 À la maison</h2>`); maison.forEach((f) => liste.appendChild(carte(f, parFilm[f.id]))); }
+}
+
+function texteEtat(a) {
+  if (!a) return "";
+  if (a.vu) return `✅ Vu ${etoiles(a.note)}${a.pourquoi ? " · " + esc(a.pourquoi) : ""}`;
+  if (a.interet === "interesse") return "👍 Intéressé";
+  if (a.interet === "pas_interesse") return "👎 Pas intéressé";
+  return "";
+}
+
+function carte(f, a) {
+  const el = document.createElement("div");
+  el.className = "card" + (f.reco ? " reco" : "");
+  const notes = [f.note_presse != null ? `Presse ★${String(f.note_presse).replace(".", ",")}` : "",
+                 f.note_spectateurs != null ? `Spectateurs ★${String(f.note_spectateurs).replace(".", ",")}` : ""]
+                .filter(Boolean).join(" · ");
+  const meta1 = [f.genre, duree(f.duree_min), f.pays, f.plateforme].filter(Boolean).map(esc).join(" · ");
+  const meta2 = [f.realisateur ? "De " + esc(f.realisateur) : "", f.casting ? "avec " + esc(f.casting) : ""].filter(Boolean).join(" · ");
+  el.innerHTML = `
+    ${f.reco ? `<span class="badge reco">⭐ Reco pour toi</span>` : ""}
+    <div class="titre"><span class="num">#${esc(f.numero)}</span>${esc(f.titre)}
+      ${f.titre_original && f.titre_original !== f.titre ? `<span class="orig">(${esc(f.titre_original)})</span>` : ""}</div>
+    ${f.reco_pourquoi ? `<div class="pourquoi-reco">${esc(f.reco_pourquoi)}</div>` : ""}
+    <div class="meta">${meta1}</div>
+    ${meta2 ? `<div class="meta">${meta2}</div>` : ""}
+    ${f.synopsis ? `<div class="syn">${esc(f.synopsis)}</div>` : ""}
+    ${notes ? `<div class="notes">${notes}</div>` : ""}
+    ${(f.cinemas || []).length ? `<div>${f.cinemas.map((c) => `<span class="badge">${esc(c)}</span>`).join("")}</div>` : ""}
+    <div class="actions">
+      <button data-a="interesse">👍 Intéressé</button>
+      <button data-a="pas_interesse">👎 Pas intéressé</button>
+      <button data-a="vu">✅ Vu</button>
+    </div>
+    <div class="etat">${texteEtat(a)}</div>
+    <div class="vuform hidden">
+      <label>Note</label><div class="stars"></div>
+      <label>Où / comment</label><input class="ou" placeholder="UGC Lille en VO, Netflix…">
+      <label>Pourquoi ?</label><textarea class="pq" placeholder="Ce qui t'a plu ou déplu…"></textarea>
+      <div style="margin-top:10px"><button class="primary save" style="width:100%">Enregistrer mon avis</button></div>
+    </div>`;
+  const majBoutons = (av) => el.querySelectorAll(".actions button").forEach((b) => b.classList.toggle("on",
+    av && ((b.dataset.a === "vu" && av.vu) || (!av.vu && b.dataset.a === av.interet))));
+  majBoutons(a);
+  const form = el.querySelector(".vuform");
+  const stars = monterEtoiles(el.querySelector(".stars"));
+  el.querySelectorAll(".actions button").forEach((b) => b.addEventListener("click", async () => {
+    if (b.dataset.a === "vu") { form.classList.toggle("hidden"); return; }
+    const nouv = { film_id: f.id, interet: b.dataset.a, vu: false };
+    const { error } = await sb.from("avis").insert(nouv);
+    if (error) return toast("Erreur : " + error.message, true);
+    majBoutons(nouv); el.querySelector(".etat").innerHTML = texteEtat(nouv); toast("Noté 👌");
+  }));
+  el.querySelector(".save").addEventListener("click", async () => {
+    if (!stars.valeur()) return toast("Choisis une note", true);
+    const nouv = { film_id: f.id, vu: true, interet: "interesse", note: stars.valeur(),
+      ou_comment: el.querySelector(".ou").value.trim() || null,
+      pourquoi: el.querySelector(".pq").value.trim() || null };
+    const { error } = await sb.from("avis").insert(nouv);
+    if (error) return toast("Erreur : " + error.message, true);
+    form.classList.add("hidden"); majBoutons(nouv); el.querySelector(".etat").innerHTML = texteEtat(nouv);
+    toast("Avis enregistré 🎉");
+  });
+  return el;
+}
+
+function monterEtoiles(conteneur) {
+  let val = 0;
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = "★";
+    b.setAttribute("aria-label", i + " étoile" + (i > 1 ? "s" : ""));
+    b.addEventListener("click", () => { val = i; peindre(); });
+    conteneur.appendChild(b);
+  }
+  const peindre = () => [...conteneur.children].forEach((b, i) => b.classList.toggle("lit", i < val));
+  return { valeur: () => val, reset: () => { val = 0; peindre(); } };
+}
+
+// ---------- Ajouter ----------
+const ajStars = monterEtoiles($("#aj-stars"));
+$("#aj-statut").addEventListener("change", () =>
+  $("#aj-bloc-vu").classList.toggle("hidden", $("#aj-statut").value !== "vu"));
+$("#form-ajout").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const statut = $("#aj-statut").value;
+  if (statut === "vu" && !ajStars.valeur()) return toast("Choisis une note", true);
+  const { data: film, error } = await sb.from("films").insert({
+    titre: $("#aj-titre").value.trim(), annee: parseInt($("#aj-annee").value) || null,
+    type: $("#aj-type").value, source: "hors_newsletter"
+  }).select().single();
+  if (error) return toast("Erreur : " + error.message, true);
+  const av = { film_id: film.id, pourquoi: $("#aj-pourquoi").value.trim() || null };
+  if (statut === "vu") Object.assign(av, { vu: true, interet: "interesse", note: ajStars.valeur(),
+    ou_comment: $("#aj-ou").value.trim() || null });
+  else Object.assign(av, { vu: false, interet: statut });
+  const r = await sb.from("avis").insert(av);
+  if (r.error) return toast("Erreur : " + r.error.message, true);
+  e.target.reset(); ajStars.reset(); $("#aj-bloc-vu").classList.remove("hidden");
+  toast("Ajouté 🎉");
+});
+
+// ---------- Historique ----------
+async function chargerHistorique() {
+  const liste = $("#liste-historique");
+  liste.innerHTML = `<p class="muted center">Chargement…</p>`;
+  const { data, error } = await sb.from("avis")
+    .select("*, films(titre, annee, type, numero, newsletter_du)")
+    .order("cree_le", { ascending: false }).limit(300);
+  if (error) { liste.innerHTML = `<div class="card">Erreur : ${esc(error.message)}</div>`; return; }
+  if (!data.length) { liste.innerHTML = `<p class="muted center">Aucun avis pour l'instant.</p>`; return; }
+  liste.innerHTML = "";
+  data.forEach((a) => {
+    const el = document.createElement("div");
+    el.className = "card hist";
+    el.innerHTML = `
+      <div class="row"><div class="titre">${esc(a.films?.titre)}${a.films?.annee ? ` <span class="orig">(${a.films.annee})</span>` : ""}</div>
+        <button class="link del" style="flex:0">Supprimer</button></div>
+      <div class="meta">${new Date(a.cree_le).toLocaleDateString("fr-FR")}${a.ou_comment ? " · " + esc(a.ou_comment) : ""}</div>
+      <div class="etat">${texteEtat(a)}</div>`;
+    el.querySelector(".del").addEventListener("click", async () => {
+      if (!confirm("Supprimer cet avis ?")) return;
+      const { error } = await sb.from("avis").delete().eq("id", a.id);
+      if (error) return toast("Erreur : " + error.message, true);
+      el.remove(); toast("Supprimé");
+    });
+    liste.appendChild(el);
+  });
+}
+
+demarrer();
+</script>
+</body>
+</html>
