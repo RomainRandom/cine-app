@@ -178,8 +178,11 @@ $("#form-login").addEventListener("submit", async (e) => {
   const { error } = await sb.auth.signInWithOtp({
     email, options: { emailRedirectTo: location.origin + location.pathname }
   });
-  $("#login-msg").textContent = error ? "Erreur : " + error.message
-    : "C'est envoyé ! Ouvre le lien reçu par email, sur cet appareil.";
+  const limite = error && (error.status === 429 || /rate limit/i.test(error.message));
+  $("#login-msg").textContent = limite
+    ? "Trop de demandes de lien : le service n'en envoie que 2 par heure. Utilise le dernier lien déjà reçu, ou réessaie dans une heure."
+    : error ? "Erreur : " + error.message
+    : "C'est envoyé ! Ouvre le lien reçu par email, sur cet appareil (vérifie aussi les spams).";
 });
 $("#btn-logout").addEventListener("click", () => sb.auth.signOut());
 
