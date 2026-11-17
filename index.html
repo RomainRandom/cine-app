@@ -228,11 +228,18 @@ async function chargerFilms() {
     ? await sb.from("dernier_avis").select("*").in("film_id", ids) : { data: [] };
   const parFilm = Object.fromEntries((avis || []).map((a) => [a.film_id, a]));
   films.sort(ordreNumero);
-  const salles = films.filter((f) => f.source !== "streaming");
-  const maison = films.filter((f) => f.source === "streaming");
+  const groupe = (f) => f.source === "streaming" ? "maison"
+    : (f.categorie || (f.reco ? "reco" : "autre"));
+  const sections = [
+    ["reco", "⭐ Films recommandés"], ["autre", "🎞️ Autres films"],
+    ["jeunesse", "🧸 Jeunesse"], ["maison", "📺 À la maison"]];
   liste.innerHTML = "";
-  if (salles.length) { liste.insertAdjacentHTML("beforeend", `<h2>🎞️ Au cinéma (${salles.length})</h2>`); salles.forEach((f) => liste.appendChild(carte(f, parFilm[f.id]))); }
-  if (maison.length) { liste.insertAdjacentHTML("beforeend", `<h2>📺 À la maison</h2>`); maison.forEach((f) => liste.appendChild(carte(f, parFilm[f.id]))); }
+  sections.forEach(([cle, titre]) => {
+    const lot = films.filter((f) => groupe(f) === cle);
+    if (!lot.length) return;
+    liste.insertAdjacentHTML("beforeend", `<h2>${titre} (${lot.length})</h2>`);
+    lot.forEach((f) => liste.appendChild(carte(f, parFilm[f.id])));
+  });
 }
 
 function texteEtat(a) {
